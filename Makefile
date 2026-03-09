@@ -16,8 +16,8 @@ help:
 build:
 	$(COMPOSE) build
 
-up: build
-	$(COMPOSE) up -d
+up:
+	$(COMPOSE) up --build -d
 
 start: up
 

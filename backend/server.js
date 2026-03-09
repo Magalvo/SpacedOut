@@ -370,7 +370,7 @@ function handleBinaryMessage(ws, message) {
   player.x = inFloats[0];
   player.y = inFloats[1];
   player.z = inFloats[2];
-  player.dx = inFloats[3]; 
+  player.dx = inFloats[3];
   player.dy = inFloats[4];
   player.dz = inFloats[5];
 
@@ -405,7 +405,7 @@ const app = uWS
       // Initialize their state
       players[ws.numericId] = createPlayerState();
       connectedSockets.set(ws.numericId, ws);
-      
+
       // --- FIX: Put new players in the Lobby (spectator mode) ---
       players[ws.numericId].deadUntil = Number.POSITIVE_INFINITY;
       players[ws.numericId].awaitingRespawn = true;
@@ -434,9 +434,9 @@ const app = uWS
             x: p.x,
             y: p.y,
             z: p.z,
-            dx: p.dx, 
-            dy: p.dy, 
-            dz: p.dz, 
+            dx: p.dx,
+            dy: p.dy,
+            dz: p.dz,
             hp: p.hp,
             dead: !isAlive(p),
             team: p.team,
@@ -483,6 +483,12 @@ const app = uWS
 
           // EWMA smooths jittery ping values for steadier rewind.
           player.rttMs = player.rttMs > 0 ? player.rttMs * 0.8 + rtt * 0.2 : rtt;
+          return;
+        }
+
+        // --- Client Ping Echo ---
+        if (payload.type === "clientPing") {
+          ws.send(JSON.stringify({ type: "clientPong", timestamp: payload.timestamp }));
           return;
         }
 
@@ -669,14 +675,14 @@ const app = uWS
           player.deadUntil = 0;
           player.hp = DEFAULT_HP;
           player.flareActiveUntil = 0;
-          
+
           player.x = spawnData.pos.x;
           player.y = spawnData.pos.y;
           player.z = spawnData.pos.z;
           player.dx = spawnData.dir.dx;
           player.dy = spawnData.dir.dy;
           player.dz = spawnData.dir.dz;
-          
+
           player.historyHead = 0;
           player.historyCount = 0;
           pushHistorySample(player, Date.now());
@@ -724,7 +730,14 @@ const app = uWS
       );
     },
   })
-  .listen(port, () => console.log(`📡 TOWER ONLINE ON PORT ${port}`));
+  .listen("0.0.0.0", 3000, (token) => {
+    if (token) {
+      console.log("📡 TOWER ONLINE ON PORT 3000 (0.0.0.0)");
+    } else {
+      console.error("🔴 FATAL: FAILED TO BIND TO PORT 3000.");
+      process.exit(1);
+    }
+  });
 
 setInterval(() => {
   const now = Date.now();
@@ -1065,7 +1078,7 @@ function simulateBotStep(botConfig, now, stepScale, activeHumanIds) {
 
   // Calculate desired flight vector
   let targetDx = 0, targetDy = 1, targetDz = 0;
-  
+
   if (bot.aiMode === "PATROL") {
     const angle = now / 3000 + bot.aiPatrolPhase;
     targetDx = Math.sin(angle); targetDy = Math.cos(angle);
@@ -1298,3 +1311,19 @@ setInterval(() => {
     botAccumulatorMs = 0;
   }
 }, BOT_DRIVER_INTERVAL_MS);
+
+// ==========================================
+// SERVER PERFORMANCE TELEMETRY
+// ==========================================
+setInterval(() => {
+  const mem = process.memoryUsage();
+  // Convert bytes to Megabytes
+  const heapUsed = (mem.heapUsed / 1024 / 1024).toFixed(2);
+  const rss = (mem.rss / 1024 / 1024).toFixed(2);
+
+  const activePlayers = connectedSockets.size;
+  const activeBots = BOTS.length;
+  const missiles = activeMissiles.length;
+
+  console.log(`📊 [PERF] Players: ${activePlayers} (Bots: ${activeBots}) | Missiles: ${missiles} | RAM: ${heapUsed}MB Heap / ${rss}MB Total`);
+}, 10000); // Logs every 10 seconds
