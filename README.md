@@ -1,21 +1,36 @@
+# Running the Project
+
 ## Run with Docker
-1. ==========================
-make up (builds + starts everything)
-Open http://localhost:8080
 
-INFO. ==========================
-make logs -> to follow logs
-make down -> to stop
+### 1. Build and Start Everything
+```bash
+make up
+```
 
-# OR 
+This command **builds and starts all services**.
 
+Open in your browser:  
+http://localhost:8080
 
-## Run without Dockerino 
-1. =========================
-cd AdAstraPerDuckUa\frontend
+### Useful Commands
+```bash
+make logs   # Follow container logs
+make down   # Stop all containers
+```
+
+---
+
+## Run Without Docker
+
+### 1. Start the Frontend
+```bash
+cd AdAstraPerDuckUa/frontend
 npx http-server
+```
 
-2. =========================
-cd AdAstraPerDuckUa\backend
+### 2. Start the Backend
+```bash
+cd AdAstraPerDuckUa/backend
 npx node-gyp rebuild
 node server.js
+```
