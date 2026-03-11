@@ -1249,7 +1249,7 @@ function simulateMissileStep(now, stepScale) {
 
 // 1. Initialize bots with tiered behavior profiles
 const BOTS = [
-  { id: 9001, spawn: { x: 0, y: 15000, z: 58000 }, profile: BOT_PROFILES.rookie },
+  //{ id: 9001, spawn: { x: 0, y: 15000, z: 58000 }, profile: BOT_PROFILES.rookie },
   //{ id: 9002, spawn: { x: -3000, y: 18000, z: 57500 }, profile: BOT_PROFILES.rookie },
   //{ id: 9003, spawn: { x: 3000, y: 22000, z: 58500 }, profile: BOT_PROFILES.rookie },
 ];

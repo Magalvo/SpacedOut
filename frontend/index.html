@@ -1531,7 +1531,7 @@
      * Each chunk is rendered at multiple detail levels based on distance
      * Default: 64
      */
-    const CHUNK_SIZE = 128;
+    const CHUNK_SIZE = 64;
 
     // ==========================================
     // TERRAIN DEV TOOLS & CONFIGURATION
@@ -1600,7 +1600,7 @@
      */
     const globalWireframeMaterial = new THREE.MeshBasicMaterial({
       vertexColors: true,
-      wireframe: true,
+      wireframe: false,
       transparent: false,
       opacity: 1,
     });
@@ -2584,7 +2584,7 @@
       /* const MAP_CHUNKS_X = 24;
       const MAP_CHUNKS_Y = 24; */
 
-      const MAP_CHUNKS_X = 12;
+      const MAP_CHUNKS_X = 12; //16 Max antes dos Sinais de fumo
       const MAP_CHUNKS_Y = 12;
 
       // 2. Generate new math grid
@@ -2626,7 +2626,7 @@
       ocean.renderOrder = 1;
       terrainGroup.add(ocean);
 
-      for (let i = 0; i < totalRows - 1; i += CHUNK_SIZE) {
+/*       for (let i = 0; i < totalRows - 1; i += CHUNK_SIZE) {
         for (let j = 0; j < totalCols - 1; j += CHUNK_SIZE) {
           const centerRow = Math.min(i + CHUNK_SIZE / 2, totalRows - 1);
           const centerCol = Math.min(j + CHUNK_SIZE / 2, totalCols - 1);
@@ -2654,7 +2654,36 @@
           );
           terrainGroup.add(lod);
         }
-      }
+      } */
+     // Create translucent ocean surface at sea level (z=0)
+
+        // --- SINGLE DRAW CALL MERGE LOGIC ---
+        const chunkGeometries = [];
+
+        // We use exactly (0,0,0) as the center so the vertex math
+        // generates absolute global coordinates instead of local chunk offsets.
+        const planetOrigin = new THREE.Vector3(0, 0, 0);
+
+        for (let i = 0; i < totalRows - 1; i += CHUNK_SIZE) {
+          for (let j = 0; j < totalCols - 1; j += CHUNK_SIZE) {
+
+            // 1. Generate the chunk at maximum detail (step = 1)
+            const chunkMesh = createChunk(grid, i, j, 4, totalRows, totalCols, planetOrigin);
+
+            // 2. Save the geometry, but ignore the Mesh wrapper
+            chunkGeometries.push(chunkMesh.geometry);
+          }
+        }
+
+        // 3. Merge all chunks into ONE massive BufferGeometry!
+        const mergedGeometry = mergeGeometries(chunkGeometries);
+
+        // 4. Create a single Mesh for the entire planet
+        const planetMesh = new THREE.Mesh(mergedGeometry, globalWireframeMaterial);
+        terrainGroup.add(planetMesh);
+
+        // 5. Free up browser RAM by deleting the individual orphaned geometries
+        chunkGeometries.forEach(geo => geo.dispose());
     }
 
     function setupDevUI() {
